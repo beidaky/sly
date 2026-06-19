@@ -2,140 +2,114 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>简易照片展示墙 (测试)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Photo Gallery</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f9f9fb;
             margin: 0;
-            padding: 30px 15px;
-            color: #333;
+            padding: 10px;
+            background-color: #000000; /* 改为纯黑背景，沉浸感更强 */
+            -webkit-tap-highlight-color: transparent; /* 去除手机端点击的高亮背景 */
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        h1 {
-            text-align: center;
-            font-weight: 500;
-            margin-bottom: 30px;
-            color: #2c3e50;
-        }
-        /* 响应式网格布局 */
+        
+        /* 响应式网格布局：默认手机端一行两张 */
         .gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
         }
-        .gallery-item {
-            background: #ffffff;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s ease;
-            border: 1px solid #edf2f7;
+
+        /* 电脑/平板端一行四张 (屏幕宽度大于等于 768px 时生效) */
+        @media (min-width: 768px) {
+            .gallery {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 15px; /* 电脑端间距稍微大一点 */
+                padding: 20px;
+            }
         }
-        .gallery-item:hover {
-            transform: translateY(-4px);
-        }
-        .img-wrapper {
+
+        .gallery img {
             width: 100%;
-            padding-top: 75%; /* 4:3 比例占位，防止加载时页面抖动 */
-            position: relative;
-            background-color: #f7fafc;
-        }
-        .gallery-item img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            aspect-ratio: 1 / 1; /* 保持缩略图为正方形，排版更整齐 */
             object-fit: cover;
-            display: block;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: opacity 0.2s;
         }
-        .img-caption {
-            padding: 12px;
-            text-align: center;
-            font-size: 14px;
-            color: #718096;
-            background: #ffffff;
-            border-top: 1px solid #edf2f7;
+
+        .gallery img:hover {
+            opacity: 0.85; /* 鼠标悬停时的微弱反馈 */
         }
-        .error-box {
-            position: absolute;
+
+        /* 点击放大后的灯箱（弹窗）样式 */
+        #lightbox {
+            position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95); /* 半透明黑色遮罩 */
+            display: none; /* 默认隐藏 */
             justify-content: center;
             align-items: center;
-            color: #a0aec0;
-            font-size: 13px;
-            padding: 10px;
-            box-sizing: border-box;
-            text-align: center;
+            z-index: 9999;
+            cursor: zoom-out;
+        }
+
+        #lightbox img {
+            max-width: 95%;
+            max-height: 95%;
+            object-fit: contain; /* 保证原图比例完整显示，不裁剪 */
+            user-select: none;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>我的相册展示</h1>
-        <div class="gallery" id="imageGallery">
-            <!-- 照片将通过 JavaScript 动态自动生成 -->
-        </div>
+    <!-- 照片墙容器 (没有任何文字) -->
+    <div class="gallery" id="gallery"></div>
+
+    <!-- 放大显示容器 (默认隐藏) -->
+    <div id="lightbox">
+        <img id="lightbox-img" src="" alt="">
     </div>
 
     <script>
         // ================= 配置区 =================
-        const TOTAL_IMAGES = 1;     // 你的照片总张数（后续增加照片时，修改这个数字即可）
-        const IMAGE_EXT = '.jpg';    // 照片的格式后缀，支持 '.jpg' 或 '.png'
+        const TOTAL_IMAGES = 22;     // 你的照片总张数
+        const IMAGE_EXT = '.jpg';    // 照片的格式后缀
         // ==========================================
 
-        const gallery = document.getElementById('imageGallery');
+        const gallery = document.getElementById('gallery');
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
 
         for (let i = 1; i <= TOTAL_IMAGES; i++) {
-            // 将数字转换为两位数格式，例如：1 变成 "01"
             const imgNumber = i.toString().padStart(2, '0');
             const imgName = imgNumber + IMAGE_EXT;
 
-            // 创建相册单项卡片
-            const item = document.createElement('div');
-            item.className = 'gallery-item';
-
-            // 创建图片包裹层（用于固定比例）
-            const wrapper = document.createElement('div');
-            wrapper.className = 'img-wrapper';
-
-            // 创建图片标签
             const img = document.createElement('img');
-            img.src = './' + imgName; // 相对路径，确保在 GitHub Pages 中正常读取同级目录下的图片
-            img.alt = 'Photo ' + imgName;
-            img.loading = 'lazy';    // 开启原生懒加载，优化多图时的加载速度
+            img.src = './' + imgName;
+            img.loading = 'lazy'; // 开启懒加载，提升网页打开速度
 
-            // 如果图片还未上传或者加载失败，显示友好的暂无提示，不破坏排版
+            // 如果图片还未上传或者不存在，直接静默隐藏，不显示任何文字和破损图标
             img.onerror = function() {
                 this.style.display = 'none';
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'error-box';
-                errorDiv.innerHTML = `<span>未找到图片</span><strong style="color:#e2e8f0;font-size:24px;margin:5px 0;">🖼️</strong><span>${imgName}</span>`;
-                wrapper.appendChild(errorDiv);
             };
 
-            // 创建底部文字标签
-            const caption = document.createElement('div');
-            caption.className = 'img-caption';
-            caption.innerText = imgName;
+            // 点击缩略图触发放大
+            img.onclick = function() {
+                lightboxImg.src = this.src;
+                lightbox.style.display = 'flex'; // 显示灯箱
+            };
 
-            // 组合元素
-            wrapper.appendChild(img);
-            item.appendChild(wrapper);
-            item.appendChild(caption);
-            gallery.appendChild(item);
+            gallery.appendChild(img);
         }
+
+        // 点击放大后的遮罩或图片任意位置，关闭放大层
+        lightbox.onclick = function() {
+            this.style.display = 'none'; // 隐藏灯箱
+        };
     </script>
 
 </body>
