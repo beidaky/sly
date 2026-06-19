@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简易照片展示墙 (测试)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f9f9fb;
+            margin: 0;
+            padding: 30px 15px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-weight: 500;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+        /* 响应式网格布局 */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .gallery-item {
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+            border: 1px solid #edf2f7;
+        }
+        .gallery-item:hover {
+            transform: translateY(-4px);
+        }
+        .img-wrapper {
+            width: 100%;
+            padding-top: 75%; /* 4:3 比例占位，防止加载时页面抖动 */
+            position: relative;
+            background-color: #f7fafc;
+        }
+        .gallery-item img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .img-caption {
+            padding: 12px;
+            text-align: center;
+            font-size: 14px;
+            color: #718096;
+            background: #ffffff;
+            border-top: 1px solid #edf2f7;
+        }
+        .error-box {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #a0aec0;
+            font-size: 13px;
+            padding: 10px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>我的相册展示</h1>
+        <div class="gallery" id="imageGallery">
+            <!-- 照片将通过 JavaScript 动态自动生成 -->
+        </div>
+    </div>
+
+    <script>
+        // ================= 配置区 =================
+        const TOTAL_IMAGES = 1;     // 你的照片总张数（后续增加照片时，修改这个数字即可）
+        const IMAGE_EXT = '.jpg';    // 照片的格式后缀，支持 '.jpg' 或 '.png'
+        // ==========================================
+
+        const gallery = document.getElementById('imageGallery');
+
+        for (let i = 1; i <= TOTAL_IMAGES; i++) {
+            // 将数字转换为两位数格式，例如：1 变成 "01"
+            const imgNumber = i.toString().padStart(2, '0');
+            const imgName = imgNumber + IMAGE_EXT;
+
+            // 创建相册单项卡片
+            const item = document.createElement('div');
+            item.className = 'gallery-item';
+
+            // 创建图片包裹层（用于固定比例）
+            const wrapper = document.createElement('div');
+            wrapper.className = 'img-wrapper';
+
+            // 创建图片标签
+            const img = document.createElement('img');
+            img.src = './' + imgName; // 相对路径，确保在 GitHub Pages 中正常读取同级目录下的图片
+            img.alt = 'Photo ' + imgName;
+            img.loading = 'lazy';    // 开启原生懒加载，优化多图时的加载速度
+
+            // 如果图片还未上传或者加载失败，显示友好的暂无提示，不破坏排版
+            img.onerror = function() {
+                this.style.display = 'none';
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-box';
+                errorDiv.innerHTML = `<span>未找到图片</span><strong style="color:#e2e8f0;font-size:24px;margin:5px 0;">🖼️</strong><span>${imgName}</span>`;
+                wrapper.appendChild(errorDiv);
+            };
+
+            // 创建底部文字标签
+            const caption = document.createElement('div');
+            caption.className = 'img-caption';
+            caption.innerText = imgName;
+
+            // 组合元素
+            wrapper.appendChild(img);
+            item.appendChild(wrapper);
+            item.appendChild(caption);
+            gallery.appendChild(item);
+        }
+    </script>
+
+</body>
+</html>
